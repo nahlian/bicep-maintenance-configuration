@@ -1,0 +1,4 @@
+ Planet DEV
+az account set --subscription "d7b1f88c-a127-4f3c-9063-17cfb498eee5"
+
+az deployment sub create --name "monitor" --location "southcentralus" --template-file 'main.bicep' --parameters 'dev.bicepparam' --confirm-with-what-if
