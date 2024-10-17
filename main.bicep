@@ -57,8 +57,8 @@ resource existing_resource_group 'Microsoft.Resources/resourceGroups@2022-09-01'
   name: 'rg-County-TX-Bexar-Dev'
 }
 
-module maintenance_configuration 'modules/maintenance_configuration.bicep' = [
-  for (a, i) in maintenanceConfiguration: {
+module linux_maintenance_configuration 'modules/maintenance_configuration.bicep' = [
+  for (l, i) in maintenanceConfiguration: if (maintenanceConfiguration[i].type.name == 'linux') {
     name: i < 10 ? 'maintenance_configuration_0${i + 1}' : 'maintenance_configuration_${i}'
     scope: existing_resource_group
     params: {
@@ -79,8 +79,8 @@ module maintenance_configuration 'modules/maintenance_configuration.bicep' = [
   }
 ]
 
-resource configuration_assignment 'Microsoft.Maintenance/configurationAssignments@2023-10-01-preview' = [
-  for (c, i) in maintenanceConfiguration: {
+resource linux_configuration_assignment 'Microsoft.Maintenance/configurationAssignments@2023-10-01-preview' = [
+  for (l, i) in maintenanceConfiguration: if (maintenanceConfiguration[i].type.name == 'linux') {
     name: i < 10
       ? '${namingPrefix}-${maintenanceConfiguration[i].type.name}-ca-0${i + 1}'
       : '${namingPrefix}-${maintenanceConfiguration[i].type.name}-ca-${i}'
@@ -88,7 +88,7 @@ resource configuration_assignment 'Microsoft.Maintenance/configurationAssignment
       filter: {
         locations: []
         osTypes: [
-          maintenanceConfiguration[i].type.name
+          'linux'
         ]
         resourceGroups: [existing_resource_group.name]
         resourceTypes: [
@@ -96,7 +96,51 @@ resource configuration_assignment 'Microsoft.Maintenance/configurationAssignment
           'microsoft.hybridcompute/machines'
         ]
       }
-      maintenanceConfigurationId: maintenance_configuration[i].outputs.securityMaintenanceId
+      maintenanceConfigurationId: linux_maintenance_configuration[i].outputs.securityMaintenanceId
+    }
+  }
+]
+
+module windows_maintenance_configuration 'modules/maintenance_configuration.bicep' = [
+  for (l, i) in maintenanceConfiguration: if (maintenanceConfiguration[i].type.name == 'windows') {
+    name: i < 10 ? 'maintenance_configuration_0${i + 1}' : 'maintenance_configuration_${i}'
+    scope: existing_resource_group
+    params: {
+      location: location
+      tags: tags
+      maintenanceConfiguration: {
+        duration: maintenanceConfiguration[i].duration
+        rebootSetting: maintenanceConfiguration[i].rebootSetting
+        recurrence: maintenanceConfiguration[i].recurrence
+        startTime: maintenanceConfiguration[i].startTime
+        timeZone: maintenanceConfiguration[i].timeZone
+        type: maintenanceConfiguration[i].type
+      }
+      name: i < 10
+        ? '${namingPrefix}-${maintenanceConfiguration[i].type.name}-mc-0${i + 1}'
+        : '${namingPrefix}-${maintenanceConfiguration[i].type.name}-mc-${i}'
+    }
+  }
+]
+
+resource windows_configuration_assignment 'Microsoft.Maintenance/configurationAssignments@2023-10-01-preview' = [
+  for (l, i) in maintenanceConfiguration: if (maintenanceConfiguration[i].type.name == 'windows') {
+    name: i < 10
+      ? '${namingPrefix}-${maintenanceConfiguration[i].type.name}-ca-0${i + 1}'
+      : '${namingPrefix}-${maintenanceConfiguration[i].type.name}-ca-${i}'
+    properties: {
+      filter: {
+        locations: []
+        osTypes: [
+          'windows'
+        ]
+        resourceGroups: [existing_resource_group.name]
+        resourceTypes: [
+          'microsoft.compute/virtualmachines'
+          'microsoft.hybridcompute/machines'
+        ]
+      }
+      maintenanceConfigurationId: windows_maintenance_configuration[i].outputs.securityMaintenanceId
     }
   }
 ]

@@ -16,6 +16,20 @@ param todayDate string = utcNow('yyyy-MM-dd')
 @description('Resource tags applied to all Azure resources.')
 param tags object
 
+@description('Configurations on maintenance name.')
+var maintenanceConfigurationConfigMap = {
+  daily: '1Day'
+  hourly: maintenanceConfiguration.recurrence.name == 'hourly'
+    ? '${maintenanceConfiguration.recurrence.frequency}Hour'
+    : null
+  weekly: maintenanceConfiguration.recurrence.name == 'weekly'
+    ? weeklyRecurrenceFunc(maintenanceConfiguration.recurrence)
+    : null
+  monthly: maintenanceConfiguration.recurrence.name == 'monthly'
+    ? monthlyRecurrenceFunc(maintenanceConfiguration.recurrence)
+    : null
+}
+
 @description('Start time for maintenance.')
 var updateStartTime = dateTimeAdd(
   '${todayDate} ${maintenanceConfiguration.startTime}',
@@ -47,15 +61,7 @@ resource maintenance_configuration 'Microsoft.Maintenance/maintenanceConfigurati
     maintenanceScope: 'InGuestPatch'
     maintenanceWindow: {
       duration: maintenanceConfiguration.duration
-      recurEvery: maintenanceConfiguration.recurrence.name == 'daily'
-        ? '1Day'
-        : maintenanceConfiguration.recurrence.name == 'hourly'
-            ? '${maintenanceConfiguration.recurrence.frequency}Hour'
-            : maintenanceConfiguration.recurrence.name == 'weekly'
-                ? weeklyRecurrenceFunc(maintenanceConfiguration.recurrence)
-                : maintenanceConfiguration.recurrence.name == 'monthly'
-                    ? monthlyRecurrenceFunc(maintenanceConfiguration.recurrence)
-                    : null
+      recurEvery: maintenanceConfigurationConfigMap[maintenanceConfiguration.recurrence.name]
       startDateTime: updateStartTime
       timeZone: maintenanceConfiguration.timeZone
     }

@@ -48,6 +48,28 @@ param maintenanceConfiguration = [
     startTime: '00:00'
     timeZone: 'Central Standard Time'
   }
+  {
+    duration: '02:00'
+    rebootSetting: 'Always'
+    recurrence: {
+      name: 'weekly'
+      day: [
+        'Friday'
+        'Monday'
+      ]
+      frequency: '1'
+    }
+    startTime: '09:00'
+    timeZone: 'Eastern Standard Time'
+    type: {
+      name: 'windows'
+      classificationsToInclude: [
+        'Critical'
+        'FeaturePack'
+        'Tools'
+      ]
+    }
+  }
 ]
 
 param tags = {
